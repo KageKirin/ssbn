@@ -1,18 +1,16 @@
 About
 -----
 
-This is a simple implementation of Deferred Screen Space Directional Occlusion algorithm.
+This is a simple implementation of Screen Space Bent Normals
 
-For more details, see http://kayru.org/articles/dssdo
+Use [RenderMonkey](http://developer.amd.com/archive/gpu/rendermonkey/pages/default.aspx) to open the ssbn.rfx project.
 
-Use [RenderMonkey](http://developer.amd.com/archive/gpu/rendermonkey/pages/default.aspx) to open the dssdo.rfx project.
-
-Or just have a quick look through dssdo.hlsl for the "meat" of the algorithm.
+Or just have a quick look through ssbn.hlsl for the "meat" of the algorithm.
 
 License (MIT)
 -------------
 
-Copyright (c) 2011 Yuriy O'Donnell
+Copyright (c) 2012 Christian Helmich
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
