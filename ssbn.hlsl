@@ -89,14 +89,14 @@ sampler2D smp_noise;
 	
 float my_getLinearDepth(sampler2D tex, float2 tc)
 {
-	//float3 eye_pos = g_mat_view_inv[3].xyz;
-	//float3 sample_pos = tex2D(tex, tc);	
-	//return distance(eye_pos, sample_pos)/ fFarClipPlane;
+	const float3 eye_pos = g_mat_view_inv[3].xyz;
+	float3 sample_pos = tex2D(tex, tc);	
+	return distance(eye_pos, sample_pos);	/// fFarClipPlane;
 	
 	//return getLinearDepthFromRenderedZ(tex, tc);
 	
 	//from linear Z:
-	return tex2D(tex, tc) * fFarClipPlane;	//this (wrong) depth value influences on the radius (which way too big) and the distScale (eliminating important samples)
+	//return tex2D(tex, tc) * fFarClipPlane;	//this (wrong) depth value influences on the radius (which way too big) and the distScale (eliminating important samples)
 }
 
 
@@ -118,8 +118,8 @@ float4 ssbn_accumulate(float4 baseTC)
 		float2 noise_texture_size = float2(4,4);
 		
 		const float3 vJitteringVector = tex2D(smp_noise, baseTC.xy * g_resolution.xy / noise_texture_size).xyz * 2.0h - 1.0h;	//get jittering vector for dithering
-		const float3 radiusParams = float3(0.002, 0.001, 0.05);		// / fCenterDepth
-		const float radius = clamp( radiusParams.x, radiusParams.y, radiusParams.z );
+		const float3 radiusParams = float3(0.4, 0.02, 0.06);		// 
+		const float radius = clamp( radiusParams.x / fCenterDepth, radiusParams.y, radiusParams.z );
 		const float3 kernel[32] = KERNEL_SAMPLES_32;
 		const float bendingStrength  = 3.h;
 		
@@ -132,10 +132,10 @@ float4 ssbn_accumulate(float4 baseTC)
 		{
 			//processing 4 samples at once is faster and cache-friendlier
 			float3 vSampleDir[4];
-			vSampleDir[0] = kernel[i+0];
-			vSampleDir[1] = kernel[i+1];
-			vSampleDir[2] = kernel[i+2];
-			vSampleDir[3] = kernel[i+3];
+			vSampleDir[0] = kernel[i+0] * radius;
+			vSampleDir[1] = kernel[i+1] * radius;
+			vSampleDir[2] = kernel[i+2] * radius;
+			vSampleDir[3] = kernel[i+3] * radius;
 		
 			//reflect the sample around the jitter vector for dithering
 			vSampleDir[0] = reflect(vSampleDir[0], vJitteringVector);
