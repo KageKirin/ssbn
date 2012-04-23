@@ -112,7 +112,7 @@ float4 ssbn_accumulate(float4 baseTC)
 
 	float3 Ncenter_WS = normalize(tex2D(smp_normal, baseTC.xy) * 2.0h - 1.0h);
 		
-	if(Zcenter < 2000.0)
+	if(Zcenter < 200.0)
 	{
 		//get normal in view space
 		float3 Ncenter_VS = mul(Ncenter_WS, matViewProjection_nrm);
@@ -129,6 +129,7 @@ float4 ssbn_accumulate(float4 baseTC)
 		half4 sumVisibility = (half4)0;
 		half4 sumValidity = (half4)0;
 		half3 avgVisibleNormDir = (half3)0;
+		half3 avgAllNormDir = (half3)0;
 
 		for (int i = 0; i < OCCLUSION_SAMPLE_COUNT; i += 4)
 		{
@@ -189,10 +190,10 @@ float4 ssbn_accumulate(float4 baseTC)
 				dot(sampleTap[2], Ncenter_VS),
 				dot(sampleTap[3], Ncenter_VS)
 			);
-			visibility = 1 - saturate(visibility);
+			visibility = saturate(visibility);
 
 			half4 validity = saturate( -sign( abs(DsampleTap) - ZthresholdOut ) );	//valid if(abs(ZsampleTap) < ZthresholdOut)
-			half4 sampleWeight = validity * visibility + (1-validity);
+			half4 sampleWeight = validity * visibility;
 			
 			// Normalize sample vectors into rays
 			sampleDir[0] = normalize( sampleDir[0] );
@@ -201,20 +202,25 @@ float4 ssbn_accumulate(float4 baseTC)
 			sampleDir[3] = normalize( sampleDir[3] );
 		
 			// Cumulate visbility and rays
-			sumVisibility += visibility;
+			sumVisibility += sampleWeight;
 			avgVisibleNormDir  += sampleDir[0] * sampleWeight.x
 								+ sampleDir[1] * sampleWeight.y
 								+ sampleDir[2] * sampleWeight.z
 								+ sampleDir[3] * sampleWeight.w;
+								
+			avgAllNormDir 	+=	sampleDir[0]
+							+	sampleDir[1]
+							+	sampleDir[2]
+							+	sampleDir[3];
 		}
 		
 		//final cumulation
 		half finalVisibility = dot( 1, sumVisibility );
-		finalVisibility *= 1.0 / OCCLUSION_SAMPLE_COUNT;
+		finalVisibility /= OCCLUSION_SAMPLE_COUNT;
+		finalVisibility = finalVisibility;
 		
-		
-		avgVisibleNormDir /= dot( 1, sumVisibility );
-		avgVisibleNormDir = normalize(avgVisibleNormDir);
+		half3 finalVisibleNormDir = avgAllNormDir - avgVisibleNormDir;
+		finalVisibleNormDir /= dot( 1, sumVisibility );
 		
 		
 		
@@ -231,8 +237,8 @@ float4 ssbn_accumulate(float4 baseTC)
 		
 		//return float4(occlusionAmount, 1);
 		//return float4(-scaleOfNormals * 0.5 + 0.5, 1);
-		//return float4(-diffOfNormals * 0.5 + 0.5, finalVisibility);
-		return float4(-avgVisibleNormDir * 0.5 + 0.5, 1);
+		return float4(diffOfNormals * 0.5 + 0.5, finalVisibility);
+		//return float4(avgVisibleNormDir * 0.5 + 0.5, 1);
 		//return float4(avgAllNormDir * 0.5 + 0.5, 1);
 		//return float4(mul(Ncenter_VS, matViewProjectionInv_nrm) * 0.5 + 0.5, 1);
 	}	
