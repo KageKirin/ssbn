@@ -918,7 +918,7 @@
         <RmIntegerVariable NAME="Y" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" VALUE="1" MIN="-10" MAX="10" CLAMP="FALSE"/>
         <RmIntegerVariable NAME="Width" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" VALUE="1146" MIN="-10" MAX="10" CLAMP="FALSE"/>
         <RmIntegerVariable NAME="Height" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" VALUE="720" MIN="-10" MAX="10" CLAMP="FALSE"/>
-        <RmIntegerVariable NAME="ShowStatus" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" VALUE="3" MIN="-10" MAX="10" CLAMP="FALSE"/>
+        <RmIntegerVariable NAME="ShowStatus" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" VALUE="1" MIN="-10" MAX="10" CLAMP="FALSE"/>
         <RmIntegerVariable NAME="Visible" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" VALUE="1" MIN="-10" MAX="10" CLAMP="FALSE"/>
         <RmIntegerVariable NAME="Minimized X" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" VALUE="-1" MIN="-10" MAX="10" CLAMP="FALSE"/>
         <RmIntegerVariable NAME="Minimized Y" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" VALUE="-1" MIN="-10" MAX="10" CLAMP="FALSE"/>
@@ -1055,11 +1055,11 @@
        <RmStringVariable NAME="Editing Shader" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC=""><RmTextDataBlock TYPE="TEXT"><![CDATA[
 Pixel Shader]]></RmTextDataBlock></RmStringVariable>
        <RmStringVariable NAME="Editing Pass" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC=""><RmTextDataBlock TYPE="TEXT"><![CDATA[
-blur_v]]></RmTextDataBlock></RmStringVariable>
+output]]></RmTextDataBlock></RmStringVariable>
        <RmIntegerVariable NAME="Y" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" VALUE="0" MIN="-10" MAX="10" CLAMP="FALSE"/>
        <RmIntegerVariable NAME="Width" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" VALUE="650" MIN="-10" MAX="10" CLAMP="FALSE"/>
        <RmIntegerVariable NAME="Height" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" VALUE="650" MIN="-10" MAX="10" CLAMP="FALSE"/>
-       <RmIntegerVariable NAME="ShowStatus" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" VALUE="1" MIN="-10" MAX="10" CLAMP="FALSE"/>
+       <RmIntegerVariable NAME="ShowStatus" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" VALUE="3" MIN="-10" MAX="10" CLAMP="FALSE"/>
        <RmIntegerVariable NAME="Visible" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" VALUE="1" MIN="-10" MAX="10" CLAMP="FALSE"/>
        <RmIntegerVariable NAME="Minimized X" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" VALUE="-1" MIN="-10" MAX="10" CLAMP="FALSE"/>
        <RmIntegerVariable NAME="Minimized Y" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" VALUE="-1" MIN="-10" MAX="10" CLAMP="FALSE"/>
@@ -1113,7 +1113,7 @@ blur_v]]></RmTextDataBlock></RmStringVariable>
     </RmRegistryBranch>
     <RmRegistryBranch NAME="WORKSPACE" API="" XML_VERSION="RenderMonkey 1.71">
      <RmStringVariable NAME="LAST_SAVE" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC=""><RmTextDataBlock TYPE="TEXT"><![CDATA[
-17/4/2012 18:24:35]]></RmTextDataBlock></RmStringVariable>
+18/4/2012 12:53:39]]></RmTextDataBlock></RmStringVariable>
      <RmStringVariable NAME="VERSION" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC=""><RmTextDataBlock TYPE="TEXT"><![CDATA[
 RenderMonkey Version 1.82 (build 322)]]></RmTextDataBlock></RmStringVariable>
      <RmStringVariable NAME="XML_VERSION" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC=""><RmTextDataBlock TYPE="TEXT"><![CDATA[
@@ -1124,7 +1124,7 @@ F:\Tests\dssdo_ssbn\]]></RmTextDataBlock></RmStringVariable>
    </RmRegistryBranch>
   </RmRegistryBranch>
   <RmDirectXEffect NAME="ssbn" API="D3D" ACTIVE_CAMERA="Camera">
-   <RmMatrixVariable NAME="matViewProjection" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="ViewProjection" VALUE_0="1.068314" VALUE_1="0.457668" VALUE_2="-0.073529" VALUE_3="-0.000000" VALUE_4="0.166545" VALUE_5="-0.001812" VALUE_6="2.408462" VALUE_7="-0.000015" VALUE_8="0.392411" VALUE_9="-0.920458" VALUE_10="-0.027832" VALUE_11="0.523968" VALUE_12="0.392018" VALUE_13="-0.919537" VALUE_14="-0.027804" VALUE_15="1.523444"/>
+   <RmMatrixVariable NAME="matViewProjection" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="ViewProjection" VALUE_0="1.233073" VALUE_1="-0.764086" VALUE_2="-0.146140" VALUE_3="-0.000000" VALUE_4="-0.193112" VALUE_5="-0.749044" VALUE_6="2.286934" VALUE_7="0.000007" VALUE_8="-0.528076" VALUE_9="-0.793939" VALUE_10="-0.304631" VALUE_11="2.504281" VALUE_12="-0.527548" VALUE_13="-0.793145" VALUE_14="-0.304326" VALUE_15="3.501776"/>
    <RmFloatVariable NAME="fFarClipPlane" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="FarClipPlane" VALUE="1000.000000" MIN="-1.000000" MAX="1.000000" CLAMP="FALSE"/>
    <RmFloatVariable NAME="fNearClipPlane" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="NearClipPlane" VALUE="1.000000" MIN="-1.000000" MAX="1.000000" CLAMP="FALSE"/>
    <RmStreamMap NAME="Stream Mapping" API="">
@@ -1306,7 +1306,14 @@ float4 ps_main(float2 tex : TEXCOORD0) : COLOR0
       float3 to_light = position.xyz - light_pos;
       float to_light_dist = length(to_light);
       float3 to_light_norm = to_light / to_light_dist;
-      float light_occlusion = 1;   //-dot(bentnormal.xyz, -to_light_norm);   //clamp(sqrt(abs(dot(bentnormal.xyz, to_light_norm) - dot(normal.xyz, to_light_norm)));
+      
+      //bent normal
+      float NdotL = saturate( dot(-to_light_norm, normal) );
+      float bentNdotL = saturate( dot(-to_light_norm, bentnormal) );
+      float light_occlusion = 1 - saturate( sqrt( saturate( NdotL - bentNdotL ) ) );
+      
+      
+      //float light_occlusion = 1;   //-dot(bentnormal.xyz, -to_light_norm);   //clamp(sqrt(abs(dot(bentnormal.xyz, to_light_norm) - dot(normal.xyz, to_light_norm)));
             //-saturate(dot(float4(-to_light_norm,1), occlusion));
 
       float dist_attenuation = 1 / (1+to_light_dist*to_light_dist);
@@ -1467,11 +1474,10 @@ float4 ps_main(float4 tex : TEXCOORD0) : COLOR0
      <RmSampler NAME="smp_depth" API="" REGISTER="1"/>
      <RmSampler NAME="smp_noise" API="" REGISTER="2"/>
      <RmSampler NAME="smp_normal" API="" REGISTER="0"/>
-     <RmShaderConstant NAME="g_resolution" API="" REGISTER="6"/>
      <RmShaderConstant NAME="matViewProjection" API="" REGISTER="3"/>
-     <RmShaderConstant NAME="OCCLUSION_SAMPLE_COUNT" API="" REGISTER="8"/>
-     <RmShaderConstant NAME="fFarClipPlane" API="" REGISTER="7"/>
+     <RmShaderConstant NAME="OCCLUSION_SAMPLE_COUNT" API="" REGISTER="7"/>
      <RmShaderConstant NAME="g_mat_view_inv" API="" REGISTER="0"/>
+     <RmShaderConstant NAME="g_resolution" API="" REGISTER="6"/>
     </RmHLSLShader>
     <RmHLSLShader NAME="Vertex Shader" API="D3D" PIXEL_SHADER="FALSE" TARGET="vs_3_0" ENTRY_POINT="vs_main" COMPILER_FLAGS="0"><RmShaderCode TYPE="TEXT"><![CDATA[
 float2 g_resolution;
@@ -1525,27 +1531,27 @@ VS_OUTPUT vs_main( float4 pos : POSITION0 )
     </RmTextureObject>
    </RmPass>
   </RmDirectXEffect>
-  <RmMatrixVariable NAME="g_mat_view_inv" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="ViewInverse" VALUE_0="0.917367" VALUE_1="0.068987" VALUE_2="0.392018" VALUE_3="-0.597218" VALUE_4="0.393002" VALUE_5="-0.000754" VALUE_6="-0.919537" VALUE_7="1.400863" VALUE_8="-0.063140" VALUE_9="0.997617" VALUE_10="-0.027800" VALUE_11="0.042358" VALUE_12="-0.000000" VALUE_13="-0.000000" VALUE_14="0.000000" VALUE_15="1.000000"/>
+  <RmMatrixVariable NAME="g_mat_view_inv" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="ViewInverse" VALUE_0="0.845751" VALUE_1="-0.079989" VALUE_2="-0.527548" VALUE_3="1.847355" VALUE_4="-0.524078" VALUE_5="-0.310264" VALUE_6="-0.793144" VALUE_7="2.777416" VALUE_8="-0.100236" VALUE_9="0.947279" VALUE_10="-0.304327" VALUE_11="1.065683" VALUE_12="0.000000" VALUE_13="0.000000" VALUE_14="0.000000" VALUE_15="1.000000"/>
   <RmFloatVariable NAME="g_occlusion_radius" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" VALUE="0.279710" MIN="0.000100" MAX="0.000000" CLAMP="FALSE"/>
   <RmFloatVariable NAME="g_occlusion_max_distance" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" VALUE="0.639419" MIN="0.000100" MAX="0.000000" CLAMP="FALSE"/>
   <RmDynamicVariable NAME="g_resolution" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="ViewportDimensions" VARIABLE_TYPE="FLOAT" ROWS="2" COLUMNS="1" FIXED_SIZE="TRUE" MIN="-1.000000" MAX="1.000000" CLAMP="FALSE" NORMALIZE="FALSE">
    <RmDynamicVariableValueContainer>
-    <RmDynamicVariableValue ROW_INDEX="0" COLUMN_INDEX="0" VALUE="1418.000000"/>
-    <RmDynamicVariableValue ROW_INDEX="1" COLUMN_INDEX="0" VALUE="684.000000"/>
+    <RmDynamicVariableValue ROW_INDEX="0" COLUMN_INDEX="0" VALUE="1126.000000"/>
+    <RmDynamicVariableValue ROW_INDEX="1" COLUMN_INDEX="0" VALUE="680.000000"/>
    </RmDynamicVariableValueContainer>
   </RmDynamicVariable>
-  <RmFloatVariable NAME="g_time" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="Time0_X" VALUE="55.401554" MIN="-1.000000" MAX="1.000000" CLAMP="FALSE"/>
+  <RmFloatVariable NAME="g_time" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="Time0_X" VALUE="82.993088" MIN="-1.000000" MAX="1.000000" CLAMP="FALSE"/>
   <RmDynamicVariable NAME="g_num_lights" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" VARIABLE_TYPE="INTEGER" ROWS="1" COLUMNS="1" FIXED_SIZE="TRUE" MIN="0" MAX="3" CLAMP="TRUE" NORMALIZE="FALSE">
    <RmDynamicVariableValueContainer>
     <RmDynamicVariableValue ROW_INDEX="0" COLUMN_INDEX="0" VALUE="3"/>
    </RmDynamicVariableValueContainer>
   </RmDynamicVariable>
   <Rm2DTextureVariable NAME="tex_noise" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" FILE_NAME=".\noise.png" ORIGIN="0"/>
-  <RmRenderableTexture NAME="rt_position" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" FILE_NAME="" ORIGIN="0" WIDTH="1418" HEIGHT="684" FORMAT="113" USE_VIEWPORT_DIMENSIONS="TRUE" GENERATE_MIPMAPS="FALSE" WIDTH_RATIO="1.000000" HEIGHT_RATIO="1.000000"/>
-  <RmRenderableTexture NAME="rt_depth" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" FILE_NAME="" ORIGIN="0" WIDTH="1418" HEIGHT="684" FORMAT="111" USE_VIEWPORT_DIMENSIONS="TRUE" GENERATE_MIPMAPS="TRUE" WIDTH_RATIO="1.000000" HEIGHT_RATIO="1.000000"/>
-  <RmRenderableTexture NAME="rt_normal" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" FILE_NAME="" ORIGIN="0" WIDTH="1418" HEIGHT="684" FORMAT="113" USE_VIEWPORT_DIMENSIONS="TRUE" GENERATE_MIPMAPS="FALSE" WIDTH_RATIO="1.000000" HEIGHT_RATIO="1.000000"/>
-  <RmRenderableTexture NAME="rt_occlusion" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" FILE_NAME="" ORIGIN="0" WIDTH="709" HEIGHT="342" FORMAT="113" USE_VIEWPORT_DIMENSIONS="TRUE" GENERATE_MIPMAPS="FALSE" WIDTH_RATIO="0.500000" HEIGHT_RATIO="0.500000"/>
-  <RmRenderableTexture NAME="rt_occlusion_tmp" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" FILE_NAME="" ORIGIN="0" WIDTH="709" HEIGHT="342" FORMAT="113" USE_VIEWPORT_DIMENSIONS="TRUE" GENERATE_MIPMAPS="FALSE" WIDTH_RATIO="0.500000" HEIGHT_RATIO="0.500000"/>
+  <RmRenderableTexture NAME="rt_position" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" FILE_NAME="" ORIGIN="0" WIDTH="1126" HEIGHT="680" FORMAT="113" USE_VIEWPORT_DIMENSIONS="TRUE" GENERATE_MIPMAPS="FALSE" WIDTH_RATIO="1.000000" HEIGHT_RATIO="1.000000"/>
+  <RmRenderableTexture NAME="rt_depth" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" FILE_NAME="" ORIGIN="0" WIDTH="1126" HEIGHT="680" FORMAT="111" USE_VIEWPORT_DIMENSIONS="TRUE" GENERATE_MIPMAPS="TRUE" WIDTH_RATIO="1.000000" HEIGHT_RATIO="1.000000"/>
+  <RmRenderableTexture NAME="rt_normal" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" FILE_NAME="" ORIGIN="0" WIDTH="1126" HEIGHT="680" FORMAT="113" USE_VIEWPORT_DIMENSIONS="TRUE" GENERATE_MIPMAPS="FALSE" WIDTH_RATIO="1.000000" HEIGHT_RATIO="1.000000"/>
+  <RmRenderableTexture NAME="rt_occlusion" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" FILE_NAME="" ORIGIN="0" WIDTH="563" HEIGHT="340" FORMAT="113" USE_VIEWPORT_DIMENSIONS="TRUE" GENERATE_MIPMAPS="FALSE" WIDTH_RATIO="0.500000" HEIGHT_RATIO="0.500000"/>
+  <RmRenderableTexture NAME="rt_occlusion_tmp" API="" ARTIST_EDITABLE="FALSE" VARIABLE_SEMANTIC="" FILE_NAME="" ORIGIN="0" WIDTH="563" HEIGHT="340" FORMAT="113" USE_VIEWPORT_DIMENSIONS="TRUE" GENERATE_MIPMAPS="FALSE" WIDTH_RATIO="0.500000" HEIGHT_RATIO="0.500000"/>
   <RmModelData NAME="quad" API="" FILE_NAME=".\quad.3ds" ORIENTATION="0"/>
   <RmModelData NAME="scene" API="" FILE_NAME=".\scene.x" ORIENTATION="0"/>
  </RmEffectWorkspace>
