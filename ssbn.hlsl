@@ -106,122 +106,135 @@ float4 ssbn_accumulate(float4 baseTC)
 	float3x3 matViewProjectionInv_nrm = (float3x3)g_mat_view_inv; 
 	
 	//get linear depth
-	const float fCenterDepth = my_getLinearDepth(smp_depth, baseTC.xy);	//smp_depth		smp_position
-	
-	float3 vNormalWS = normalize(tex2D(smp_normal, baseTC.xy) * 2.0h - 1.0h);
+	const float Zcenter = my_getLinearDepth(smp_depth, baseTC.xy);	//smp_depth		smp_position
+	const float Zcenter_inv = 1.0 / Zcenter;
+	const half ZthresholdOut	= 1.5;	//threshold, to be parametrized
+
+	float3 Ncenter_WS = normalize(tex2D(smp_normal, baseTC.xy) * 2.0h - 1.0h);
 		
-	if(fCenterDepth < 2000.0)
+	if(Zcenter < 2000.0)
 	{
 		//get normal in view space
-		float3 vNormalVS = mul(vNormalWS, matViewProjection_nrm);
+		float3 Ncenter_VS = mul(Ncenter_WS, matViewProjection_nrm);
 		
-		float2 noise_texture_size = float2(4,4);
+		static const float2 noise_texture_size = float2(4,4);
 		
-		const float3 vJitteringVector = tex2D(smp_noise, baseTC.xy * g_resolution.xy / noise_texture_size).xyz * 2.0h - 1.0h;	//get jittering vector for dithering
+		const float3 Njitter = tex2D(smp_noise, baseTC.xy * g_resolution.xy / noise_texture_size).xyz * 2.0h - 1.0h;	//get jittering vector for dithering
 		const float3 radiusParams = float3(0.4, 0.02, 0.06);		// 
-		const float radius = clamp( radiusParams.x / fCenterDepth, radiusParams.y, radiusParams.z );
+		const float radius = clamp( radiusParams.x * Zcenter_inv, radiusParams.y, radiusParams.z );
+		
 		const float3 kernel[32] = KERNEL_SAMPLES_32;
-		const float bendingStrength  = 3.h;
 		
 		//sampling loop		
-		float4 sumVisibility = (float4)0;		
-		float3 avgVisibleNormDir = (float3)0;
-		float3 avgAllNormDir = (float3)0;		//kept for debug, should be ~= vNormalVS
+		half4 sumVisibility = (half4)0;
+		half4 sumValidity = (half4)0;
+		half3 avgVisibleNormDir = (half3)0;
 
 		for (int i = 0; i < OCCLUSION_SAMPLE_COUNT; i += 4)
 		{
-			//processing 4 samples at once is faster and cache-friendlier
-			float3 vSampleDir[4];
-			vSampleDir[0] = kernel[i+0] * radius;
-			vSampleDir[1] = kernel[i+1] * radius;
-			vSampleDir[2] = kernel[i+2] * radius;
-			vSampleDir[3] = kernel[i+3] * radius;
-		
-			//reflect the sample around the jitter vector for dithering
-			vSampleDir[0] = reflect(vSampleDir[0], vJitteringVector);
-			vSampleDir[1] = reflect(vSampleDir[1], vJitteringVector);
-			vSampleDir[2] = reflect(vSampleDir[2], vJitteringVector);
-			vSampleDir[3] = reflect(vSampleDir[3], vJitteringVector);
+			//vectorized, processing 4 samples at once for speed
+			half3 sampleDir[4];
+			sampleDir[0] = kernel[i+0] * radius;
+			sampleDir[1] = kernel[i+1] * radius;
+			sampleDir[2] = kernel[i+2] * radius;
+			sampleDir[3] = kernel[i+3] * radius;		
 
-			//have the sample be in the hemisphere around the center normal
-			vSampleDir[0] = ((dot(vNormalVS, vSampleDir[0]) >= 0.0f) ? vSampleDir[0] : -vSampleDir[0]);
-			vSampleDir[1] = ((dot(vNormalVS, vSampleDir[1]) >= 0.0f) ? vSampleDir[1] : -vSampleDir[1]);
-			vSampleDir[2] = ((dot(vNormalVS, vSampleDir[2]) >= 0.0f) ? vSampleDir[2] : -vSampleDir[2]);
-			vSampleDir[3] = ((dot(vNormalVS, vSampleDir[3]) >= 0.0f) ? vSampleDir[3] : -vSampleDir[3]);
+			// Reflect the sample around the dithering normal
+			sampleDir[0] = reflect(sampleDir[0], Njitter);
+			sampleDir[1] = reflect(sampleDir[1], Njitter);
+			sampleDir[2] = reflect(sampleDir[2], Njitter);
+			sampleDir[3] = reflect(sampleDir[3], Njitter);
 
-			float4 fSampleDirDepth = float4(
-				vSampleDir[0].z,
-				vSampleDir[1].z,
-				vSampleDir[2].z,
-				vSampleDir[3].z );
-				
-			float4	fZBufDepth = float4(
-				my_getLinearDepth(smp_depth, baseTC.xy + vSampleDir[0].xy),
-				my_getLinearDepth(smp_depth, baseTC.xy + vSampleDir[1].xy),
-				my_getLinearDepth(smp_depth, baseTC.xy + vSampleDir[2].xy),
-				my_getLinearDepth(smp_depth, baseTC.xy + vSampleDir[3].xy)
+			// Make sure that the sample is in the hemisphere defined by the pixel normal
+			sampleDir[0] *= sign(dot(Ncenter_VS, sampleDir[0]));
+			sampleDir[1] *= sign(dot(Ncenter_VS, sampleDir[1]));
+			sampleDir[2] *= sign(dot(Ncenter_VS, sampleDir[2]));
+			sampleDir[3] *= sign(dot(Ncenter_VS, sampleDir[3]));
+
+			half4 ZsampleDir = half4(
+				sampleDir[0].z,
+				sampleDir[1].z,
+				sampleDir[2].z,
+				sampleDir[3].z );			
+
+			half4	ZsampleTap = half4(
+				my_getLinearDepth(smp_depth, baseTC.xy + sampleDir[0].xy),	//shouldn't we transform project the sampleDirs into texture space? (unless they are already)
+				my_getLinearDepth(smp_depth, baseTC.xy + sampleDir[1].xy),
+				my_getLinearDepth(smp_depth, baseTC.xy + sampleDir[2].xy),
+				my_getLinearDepth(smp_depth, baseTC.xy + sampleDir[3].xy)
+			);
+			ZsampleTap -= Zcenter;			
+
+			half3 sampleTap[4];
+			sampleTap[0] = half3(sampleDir[0].xy, ZsampleTap.x);
+			sampleTap[1] = half3(sampleDir[1].xy, ZsampleTap.y);
+			sampleTap[2] = half3(sampleDir[2].xy, ZsampleTap.z);
+			sampleTap[3] = half3(sampleDir[3].xy, ZsampleTap.w);			
+
+			half4 DsampleTap = half4(
+				length(sampleTap[0]),
+				length(sampleTap[1]),
+				length(sampleTap[2]),
+				length(sampleTap[3])
 			);
 			
-			fZBufDepth = fZBufDepth / fCenterDepth;
+			sampleTap[0] /= DsampleTap.x;
+			sampleTap[1] /= DsampleTap.y;
+			sampleTap[2] /= DsampleTap.z;
+			sampleTap[3] /= DsampleTap.w;			
+
+			half4 visibility = half4(
+				dot(sampleTap[0], Ncenter_VS),
+				dot(sampleTap[1], Ncenter_VS),
+				dot(sampleTap[2], Ncenter_VS),
+				dot(sampleTap[3], Ncenter_VS)
+			);
+			visibility = 1 - saturate(visibility);
+
+			half4 validity = saturate( -sign( abs(DsampleTap) - ZthresholdOut ) );	//valid if(abs(ZsampleTap) < ZthresholdOut)
+			half4 sampleWeight = validity * visibility + (1-validity);
 			
-			//compute relative sample depth
-			float4 distScale = (1.h + fSampleDirDepth * 2.h - fZBufDepth) / radius;
+			// Normalize sample vectors into rays
+			sampleDir[0] = normalize( sampleDir[0] );
+			sampleDir[1] = normalize( sampleDir[1] );
+			sampleDir[2] = normalize( sampleDir[2] );
+			sampleDir[3] = normalize( sampleDir[3] );
 		
-			//normalize sample vectors into rays
-			vSampleDir[0] = normalize( vSampleDir[0] );
-			vSampleDir[1] = normalize( vSampleDir[1] );
-			vSampleDir[2] = normalize( vSampleDir[2] );
-			vSampleDir[3] = normalize( vSampleDir[3] );
-		
-		
-			float4 fadeOut = saturate( 1.h / distScale );
-			float4 rayFadeOut = float4(
-				dot( vSampleDir[0], vNormalVS ),
-				dot( vSampleDir[1], vNormalVS ),
-				dot( vSampleDir[2], vNormalVS ),
-				dot( vSampleDir[3], vNormalVS )
-			);			
-			rayFadeOut = saturate( rayFadeOut );
-		
-			//cumulate visbility and rays
-			sumVisibility += fadeOut * rayFadeOut;
-
-			float4 rayStrength = (1 - fadeOut) * rayFadeOut;
-			avgVisibleNormDir  += vSampleDir[0] * rayStrength.x
-								+ vSampleDir[1] * rayStrength.y
-								+ vSampleDir[2] * rayStrength.z
-								+ vSampleDir[3] * rayStrength.w;
-
-			avgAllNormDir	+= vSampleDir[0]
-							 + vSampleDir[1]
-							 + vSampleDir[2]
-							 + vSampleDir[3];
+			// Cumulate visbility and rays
+			sumVisibility += visibility;
+			avgVisibleNormDir  += sampleDir[0] * sampleWeight.x
+								+ sampleDir[1] * sampleWeight.y
+								+ sampleDir[2] * sampleWeight.z
+								+ sampleDir[3] * sampleWeight.w;
 		}
 		
 		//final cumulation
-		sumVisibility *= bendingStrength / OCCLUSION_SAMPLE_COUNT;
-		float finalVisibility = dot( 1, sumVisibility );
+		half finalVisibility = dot( 1, sumVisibility );
+		finalVisibility *= 1.0 / OCCLUSION_SAMPLE_COUNT;
 		
+		
+		avgVisibleNormDir /= dot( 1, sumVisibility );
 		avgVisibleNormDir = normalize(avgVisibleNormDir);
-		avgAllNormDir = normalize(avgAllNormDir);
+		
+		
 		
 		float3 occlusionAmount = float3(finalVisibility, finalVisibility, finalVisibility);
 		
-		float3 scaleOfNormals = finalVisibility * vNormalVS;
-		scaleOfNormals = mul(scaleOfNormals, matViewProjectionInv_nrm);
+		//float3 scaleOfNormals = finalVisibility * Ncenter_VS;
+		//scaleOfNormals = mul(scaleOfNormals, matViewProjectionInv_nrm);
 		
-		float3 diffOfNormals = vNormalVS - avgVisibleNormDir;
+		float3 diffOfNormals = Ncenter_VS - avgVisibleNormDir;
 		diffOfNormals = mul(diffOfNormals, matViewProjectionInv_nrm);
 		
 		avgVisibleNormDir = mul(avgVisibleNormDir, matViewProjectionInv_nrm);
-		avgAllNormDir = mul(avgAllNormDir, matViewProjectionInv_nrm);
+		//avgAllNormDir = mul(avgAllNormDir, matViewProjectionInv_nrm);
 		
 		//return float4(occlusionAmount, 1);
 		//return float4(-scaleOfNormals * 0.5 + 0.5, 1);
-		return float4(diffOfNormals * 0.5 + 0.5, finalVisibility);
-		//return float4(avgVisibleNormDir * 0.5 + 0.5, 1);
+		//return float4(-diffOfNormals * 0.5 + 0.5, finalVisibility);
+		return float4(-avgVisibleNormDir * 0.5 + 0.5, 1);
 		//return float4(avgAllNormDir * 0.5 + 0.5, 1);
-		//return float4(mul(vNormalVS, matViewProjectionInv_nrm) * 0.5 + 0.5, 1);
+		//return float4(mul(Ncenter_VS, matViewProjectionInv_nrm) * 0.5 + 0.5, 1);
 	}	
 	return float4(0.5, 0.5, 0.5, 0);	//return a 0 vector
 }
